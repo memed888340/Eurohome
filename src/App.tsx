@@ -9,11 +9,12 @@ import AuthModal from './components/shared/AuthModal';
 import CreateAd from './pages/CreateAd';
 import AdDetails from './pages/AdDetails';
 import AdminPanel from './pages/AdminPanel';
+import Cabinet from './pages/Cabinet';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-type PageState = 'home' | 'create-ad' | 'admin' | { type: 'details'; id: string };
+type PageState = 'home' | 'create-ad' | 'admin' | 'cabinet' | { type: 'details'; id: string };
 
 function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -23,7 +24,6 @@ function App() {
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Firebase Auth dinləyicisi — səhifə yenilənsə belə user qalır
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -75,6 +75,7 @@ function App() {
         user={user}
         isAdmin={isAdmin}
         onAdminClick={() => setCurrentPage('admin')}
+        onCabinetClick={() => setCurrentPage('cabinet')}
         onSignOut={handleSignOut}
       />
 
@@ -100,6 +101,10 @@ function App() {
 
         {currentPage === 'admin' && (
           <AdminPanel onBack={() => setCurrentPage('home')} />
+        )}
+
+        {currentPage === 'cabinet' && (
+          <Cabinet user={user} onBack={() => setCurrentPage('home')} />
         )}
 
         {typeof currentPage === 'object' && currentPage.type === 'details' && (
