@@ -91,6 +91,11 @@ function App() {
         onClose={() => setMobileNavOpen(false)}
         onLoginClick={openLogin}
         onCreateAdClick={handleCreateAd}
+        user={user}
+        isAdmin={isAdmin}
+        onAdminClick={() => setCurrentPage('admin')}
+        onCabinetClick={() => setCurrentPage('cabinet')}
+        onSignOut={handleSignOut}
       />
 
       <main className="flex-1">

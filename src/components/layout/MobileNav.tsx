@@ -1,17 +1,34 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft, Plus, User } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Plus, User, LogOut, LayoutDashboard, Briefcase } from 'lucide-react';
 import { CATEGORIES } from '../../data';
 import { Category } from '../../types';
 import Button from '../shared/Button';
+import { auth } from '../../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginClick: () => void;
   onCreateAdClick: () => void;
+  user?: any;
+  isAdmin?: boolean;
+  onAdminClick?: () => void;
+  onCabinetClick?: () => void;
+  onSignOut?: () => void;
 }
 
-export default function MobileNav({ isOpen, onClose, onLoginClick, onCreateAdClick }: MobileNavProps) {
+export default function MobileNav({
+  isOpen,
+  onClose,
+  onLoginClick,
+  onCreateAdClick,
+  user,
+  isAdmin,
+  onAdminClick,
+  onCabinetClick,
+  onSignOut,
+}: MobileNavProps) {
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
 
   useEffect(() => {
@@ -27,6 +44,12 @@ export default function MobileNav({ isOpen, onClose, onLoginClick, onCreateAdCli
   const handleAction = (fn: () => void) => {
     onClose();
     setTimeout(fn, 50);
+  };
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    onClose();
+    onSignOut?.();
   };
 
   return (
@@ -56,6 +79,23 @@ export default function MobileNav({ isOpen, onClose, onLoginClick, onCreateAdCli
           </button>
         </div>
 
+        {/* İstifadəçi profil bloku — giriş edibsə */}
+        {user && (
+          <div className="px-4 py-3 border-b border-gray-100 shrink-0 bg-orange-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-[#F2A900] rounded-full flex items-center justify-center text-white font-black text-base">
+                {(user.displayName || user.email || '?')[0].toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-900 text-sm truncate">
+                  {user.displayName || 'İstifadəçi'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="px-4 py-3 border-b border-gray-100 shrink-0">
           <Button
@@ -66,13 +106,48 @@ export default function MobileNav({ isOpen, onClose, onLoginClick, onCreateAdCli
             <Plus size={18} />
             Elan ver
           </Button>
-          <button
-            onClick={() => handleAction(onLoginClick)}
-            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-700 active:bg-gray-100 transition-colors text-sm font-bold border border-gray-100 touch-manipulation"
-          >
-            <User size={20} className="text-[#F2A900]" />
-            Daxil ol / Qeydiyyat
-          </button>
+
+          {/* Giriş etməyib */}
+          {!user && (
+            <button
+              onClick={() => handleAction(onLoginClick)}
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-700 active:bg-gray-100 transition-colors text-sm font-bold border border-gray-100 touch-manipulation"
+            >
+              <User size={20} className="text-[#F2A900]" />
+              Daxil ol / Qeydiyyat
+            </button>
+          )}
+
+          {/* Giriş edibsə */}
+          {user && (
+            <div className="space-y-1">
+              <button
+                onClick={() => handleAction(() => onCabinetClick?.())}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-gray-700 active:bg-gray-100 transition-colors text-sm font-bold border border-gray-100 touch-manipulation"
+              >
+                <Briefcase size={20} className="text-[#F2A900]" />
+                Kabinetim
+              </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => handleAction(() => onAdminClick?.())}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-purple-600 active:bg-purple-50 transition-colors text-sm font-bold border border-purple-100 touch-manipulation"
+                >
+                  <LayoutDashboard size={20} className="text-purple-500" />
+                  Admin Panel
+                </button>
+              )}
+
+              <button
+                onClick={handleSignOut}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-red-500 active:bg-red-50 transition-colors text-sm font-bold border border-red-100 touch-manipulation"
+              >
+                <LogOut size={20} className="text-red-400" />
+                Çıxış
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Scrollable content */}
