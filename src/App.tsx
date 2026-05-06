@@ -9,12 +9,19 @@ import AuthModal from './components/shared/AuthModal';
 import CreateAd from './pages/CreateAd';
 import AdDetails from './pages/AdDetails';
 import AdminPanel from './pages/AdminPanel';
+import AdminAdDetail from './pages/AdminAdDetail';
 import Cabinet from './pages/Cabinet';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
-type PageState = 'home' | 'create-ad' | 'admin' | 'cabinet' | { type: 'details'; id: string };
+type PageState =
+  | 'home'
+  | 'create-ad'
+  | 'admin'
+  | 'cabinet'
+  | { type: 'details'; id: string }
+  | { type: 'admin-detail'; id: string };
 
 function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -100,7 +107,10 @@ function App() {
         )}
 
         {currentPage === 'admin' && (
-          <AdminPanel onBack={() => setCurrentPage('home')} />
+          <AdminPanel
+            onBack={() => setCurrentPage('home')}
+            onAdClick={(id) => setCurrentPage({ type: 'admin-detail', id })}
+          />
         )}
 
         {currentPage === 'cabinet' && (
@@ -111,6 +121,13 @@ function App() {
           <AdDetails
             adId={currentPage.id}
             onBack={() => setCurrentPage('home')}
+          />
+        )}
+
+        {typeof currentPage === 'object' && currentPage.type === 'admin-detail' && (
+          <AdminAdDetail
+            adId={currentPage.id}
+            onBack={() => setCurrentPage('admin')}
           />
         )}
       </main>

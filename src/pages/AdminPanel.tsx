@@ -8,7 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import {
   LayoutDashboard, FileText, Users, LogOut,
   Trash2, CheckCircle, XCircle, Loader2,
-  TrendingUp, ShieldCheck, Menu, X, Clock
+  TrendingUp, ShieldCheck, Menu, X, Clock, Eye
 } from 'lucide-react';
 
 interface Ad {
@@ -41,7 +41,12 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   expired:  { label: 'Müddəti bitib', color: 'bg-gray-100 text-gray-500 border border-gray-200' },
 };
 
-export default function AdminPanel({ onBack }: { onBack: () => void }) {
+interface AdminPanelProps {
+  onBack: () => void;
+  onAdClick?: (adId: string) => void;
+}
+
+export default function AdminPanel({ onBack, onAdClick }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [adFilter, setAdFilter] = useState<AdFilter>('all');
   const [ads, setAds] = useState<Ad[]>([]);
@@ -82,12 +87,14 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
     fetchData();
   }, [isAdmin]);
 
-  const updateAdStatus = async (id: string, status: 'active' | 'rejected') => {
+  const updateAdStatus = async (e: React.MouseEvent, id: string, status: 'active' | 'rejected') => {
+    e.stopPropagation();
     await updateDoc(doc(db, 'ads', id), { status });
     setAds(prev => prev.map(a => a.id === id ? { ...a, status } : a));
   };
 
-  const deleteAd = async (id: string) => {
+  const deleteAd = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     if (!confirm('Bu elanı silmək istəyirsiniz?')) return;
     await deleteDoc(doc(db, 'ads', id));
     setAds(prev => prev.filter(a => a.id !== id));
@@ -147,9 +154,9 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
   ];
 
   const adFilters: { id: AdFilter; label: string }[] = [
-    { id: 'all', label: `Hamısı (${counts.all})` },
-    { id: 'pending', label: `Yoxlamada (${counts.pending})` },
-    { id: 'active', label: `Aktiv (${counts.active})` },
+    { id: 'all',      label: `Hamısı (${counts.all})` },
+    { id: 'pending',  label: `Yoxlamada (${counts.pending})` },
+    { id: 'active',   label: `Aktiv (${counts.active})` },
     { id: 'rejected', label: `Rədd edildi (${counts.rejected})` },
   ];
 
@@ -253,7 +260,11 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                   </h2>
                   <div className="space-y-3">
                     {ads.filter(a => a.status === 'pending').map(ad => (
-                      <div key={ad.id} className="bg-white rounded-xl p-4 flex items-center gap-4 shadow-sm">
+                      <div
+                        key={ad.id}
+                        onClick={() => onAdClick?.(ad.id)}
+                        className="bg-white rounded-xl p-4 flex items-center gap-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                      >
                         <img
                           src={ad.images?.[0] || 'https://via.placeholder.com/48'}
                           className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
@@ -266,14 +277,14 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                         <span className="font-bold text-orange-500 whitespace-nowrap">{ad.price} AZN</span>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => updateAdStatus(ad.id, 'active')}
+                            onClick={(e) => updateAdStatus(e, ad.id, 'active')}
                             className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors"
                           >
                             <CheckCircle size={14} />
                             Təsdiqlə
                           </button>
                           <button
-                            onClick={() => updateAdStatus(ad.id, 'rejected')}
+                            onClick={(e) => updateAdStatus(e, ad.id, 'rejected')}
                             className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors"
                           >
                             <XCircle size={14} />
@@ -293,7 +304,11 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                   {ads.slice(0, 5).map(ad => {
                     const statusCfg = STATUS_CONFIG[ad.status || 'pending'];
                     return (
-                      <div key={ad.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
+                      <div
+                        key={ad.id}
+                        onClick={() => onAdClick?.(ad.id)}
+                        className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors"
+                      >
                         <img
                           src={ad.images?.[0] || 'https://via.placeholder.com/48'}
                           className="w-12 h-12 rounded-lg object-cover"
@@ -357,7 +372,11 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                       {filteredAds.map(ad => {
                         const statusCfg = STATUS_CONFIG[ad.status || 'pending'];
                         return (
-                          <tr key={ad.id} className="hover:bg-gray-50 transition-colors">
+                          <tr
+                            key={ad.id}
+                            onClick={() => onAdClick?.(ad.id)}
+                            className="hover:bg-gray-50 transition-colors cursor-pointer"
+                          >
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-3">
                                 <img
@@ -380,17 +399,24 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                             <td className="px-4 py-3 text-right font-bold text-orange-500">{ad.price} AZN</td>
                             <td className="px-4 py-3">
                               <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); onAdClick?.(ad.id); }}
+                                  className="p-2 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Bax / Redaktə et"
+                                >
+                                  <Eye size={16} />
+                                </button>
                                 {ad.status === 'pending' && (
                                   <>
                                     <button
-                                      onClick={() => updateAdStatus(ad.id, 'active')}
+                                      onClick={(e) => updateAdStatus(e, ad.id, 'active')}
                                       className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                                       title="Təsdiqlə"
                                     >
                                       <CheckCircle size={16} />
                                     </button>
                                     <button
-                                      onClick={() => updateAdStatus(ad.id, 'rejected')}
+                                      onClick={(e) => updateAdStatus(e, ad.id, 'rejected')}
                                       className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
                                       title="Rədd et"
                                     >
@@ -400,7 +426,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                                 )}
                                 {ad.status === 'active' && (
                                   <button
-                                    onClick={() => updateAdStatus(ad.id, 'rejected')}
+                                    onClick={(e) => updateAdStatus(e, ad.id, 'rejected')}
                                     className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Ləğv et"
                                   >
@@ -409,7 +435,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                                 )}
                                 {ad.status === 'rejected' && (
                                   <button
-                                    onClick={() => updateAdStatus(ad.id, 'active')}
+                                    onClick={(e) => updateAdStatus(e, ad.id, 'active')}
                                     className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
                                     title="Aktivləşdir"
                                   >
@@ -417,7 +443,7 @@ export default function AdminPanel({ onBack }: { onBack: () => void }) {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => deleteAd(ad.id)}
+                                  onClick={(e) => deleteAd(e, ad.id)}
                                   className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                   title="Sil"
                                 >
