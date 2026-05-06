@@ -41,6 +41,12 @@ function App() {
     }
   };
 
+  const handleSignOut = () => {
+    setUser(null);
+    setIsAdmin(false);
+    setCurrentPage('home');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header
@@ -48,6 +54,10 @@ function App() {
         onLoginClick={openLogin}
         onCreateAdClick={handleCreateAd}
         onLogoClick={() => setCurrentPage('home')}
+        user={user}
+        isAdmin={isAdmin}
+        onAdminClick={() => setCurrentPage('admin')}
+        onSignOut={handleSignOut}
       />
 
       <MobileNav

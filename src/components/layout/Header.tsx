@@ -1,22 +1,36 @@
 import { useState } from 'react';
-import { Menu, Bell, Heart, User, Plus, ChevronDown, Search } from 'lucide-react';
+import { Menu, Bell, Heart, User, Plus, ChevronDown, Search, LogOut, Settings } from 'lucide-react';
 import { CATEGORIES } from '../../data';
 import Button from '../shared/Button';
+import { auth } from '../../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 interface HeaderProps {
   onMenuOpen: () => void;
   onLoginClick: () => void;
   onLogoClick: () => void;
   onCreateAdClick: () => void;
+  user?: any;
+  isAdmin?: boolean;
+  onAdminClick?: () => void;
 }
 
-export default function Header({ 
-  onMenuOpen, 
-  onLoginClick, 
-  onLogoClick, 
-  onCreateAdClick 
+export default function Header({
+  onMenuOpen,
+  onLoginClick,
+  onLogoClick,
+  onCreateAdClick,
+  user,
+  isAdmin,
+  onAdminClick,
 }: HeaderProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    window.location.reload();
+  };
 
   return (
     <header className="bg-[#1A1A1A] sticky top-0 z-40 shadow-lg">
@@ -33,10 +47,7 @@ export default function Header({
               <Menu size={22} />
             </button>
 
-            <button 
-              onClick={onLogoClick} 
-              className="flex items-center gap-2 group"
-            >
+            <button onClick={onLogoClick} className="flex items-center gap-2 group">
               <div className="w-8 h-8 bg-[#F2A900] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
                 <span className="text-[#1A1A1A] font-black text-sm">EH</span>
               </div>
@@ -67,18 +78,70 @@ export default function Header({
             <button className="hidden md:flex items-center justify-center w-9 h-9 text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/10">
               <Heart size={20} />
             </button>
-            
-            <button 
-              onClick={onLoginClick}
-              className="hidden md:flex items-center gap-2 text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/10 text-sm"
-            >
-              <User size={16} />
-              Daxil ol
-            </button>
 
-            <Button 
+            {/* Giriş etməyib */}
+            {!user && (
+              <button
+                onClick={onLoginClick}
+                className="hidden md:flex items-center gap-2 text-white/70 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/10 text-sm"
+              >
+                <User size={16} />
+                Daxil ol
+              </button>
+            )}
+
+            {/* Giriş edib — hesab menyusu */}
+            {user && (
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <div className="w-7 h-7 bg-[#F2A900] rounded-full flex items-center justify-center text-[#1A1A1A] font-bold text-xs">
+                    {(user.displayName || user.email || '?')[0].toUpperCase()}
+                  </div>
+                  <span className="text-white text-sm font-medium max-w-[100px] truncate">
+                    {user.displayName || user.email}
+                  </span>
+                  <ChevronDown size={14} className={`text-white/60 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown */}
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100 mb-1">
+                        <p className="text-xs text-gray-400">Hesab</p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{user.email}</p>
+                      </div>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => { setUserMenuOpen(false); onAdminClick?.(); }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-purple-600 hover:bg-purple-50 transition-colors"
+                        >
+                          <Settings size={15} />
+                          Admin Panel
+                        </button>
+                      )}
+
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        <LogOut size={15} />
+                        Çıxış
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            <Button
               onClick={onCreateAdClick}
-              size="sm" 
+              size="sm"
               className="hidden md:flex items-center gap-1.5"
             >
               <Plus size={15} />
@@ -104,12 +167,9 @@ export default function Header({
                   <ChevronDown size={13} className={`transition-transform duration-200 ${activeCategory === cat.id ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Dropdown Menyusu */}
                 {activeCategory === cat.id && (
                   <div className="absolute top-full left-0 pt-2 z-50">
-                    {/* Görünməz körpü qatı (mausun itməməsi üçün) */}
                     <div className="absolute top-0 left-0 w-full h-2 bg-transparent" />
-                    
                     <div className="w-52 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 animate-in fade-in zoom-in-95 duration-150">
                       {cat.subcategories.map(sub => (
                         <button
