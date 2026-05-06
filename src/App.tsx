@@ -7,22 +7,28 @@ import CategoryGrid from './components/home/CategoryGrid';
 import FeaturedAds from './components/home/FeaturedAds';
 import AuthModal from './components/shared/AuthModal';
 import CreateAd from './pages/CreateAd';
-import AdDetails from './pages/AdDetails'; // 1. Yeni səhifəni import etdik
+import AdDetails from './pages/AdDetails';
 
-// Tip tərifini sadələşdiririk
 type PageState = 'home' | 'create-ad' | { type: 'details'; id: string };
 
 function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  
-  // 2. Səhifə state-ini genişləndirdik
   const [currentPage, setCurrentPage] = useState<PageState>('home');
+  const [user, setUser] = useState<any>(null); // Firebase auth əlavə edəndə buranı yeniləyəcəksən
 
   const openLogin = () => {
     setAuthMode('login');
     setIsAuthOpen(true);
+  };
+
+  const handleCreateAd = () => {
+    if (!user) {
+      openLogin(); // giriş etməyibsə login modalı aç
+    } else {
+      setCurrentPage('create-ad');
+    }
   };
 
   return (
@@ -30,17 +36,18 @@ function App() {
       <Header 
         onMenuOpen={() => setMobileNavOpen(true)} 
         onLoginClick={openLogin}
-        onCreateAdClick={() => setCurrentPage('create-ad')}
+        onCreateAdClick={handleCreateAd}
         onLogoClick={() => setCurrentPage('home')}
       />
       
       <MobileNav 
         isOpen={mobileNavOpen} 
-        onClose={() => setMobileNavOpen(false)} 
+        onClose={() => setMobileNavOpen(false)}
+        onLoginClick={openLogin}
+        onCreateAdClick={handleCreateAd}
       />
 
       <main className="flex-1">
-        {/* 3. Səhifə render məntiqini yenilədik */}
         {currentPage === 'home' && (
           <>
             <Hero />
