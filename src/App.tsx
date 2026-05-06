@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
@@ -9,6 +9,9 @@ import AuthModal from './components/shared/AuthModal';
 import CreateAd from './pages/CreateAd';
 import AdDetails from './pages/AdDetails';
 import AdminPanel from './pages/AdminPanel';
+import { auth, db } from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 type PageState = 'home' | 'create-ad' | 'admin' | { type: 'details'; id: string };
 
@@ -19,6 +22,21 @@ function App() {
   const [currentPage, setCurrentPage] = useState<PageState>('home');
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Firebase Auth dinləyicisi — səhifə yenilənsə belə user qalır
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const adminDoc = await getDoc(doc(db, 'admins', firebaseUser.uid));
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const openLogin = () => {
     setAuthMode('login');
