@@ -8,15 +8,17 @@ import FeaturedAds from './components/home/FeaturedAds';
 import AuthModal from './components/shared/AuthModal';
 import CreateAd from './pages/CreateAd';
 import AdDetails from './pages/AdDetails';
+import AdminPanel from './pages/AdminPanel';
 
-type PageState = 'home' | 'create-ad' | { type: 'details'; id: string };
+type PageState = 'home' | 'create-ad' | 'admin' | { type: 'details'; id: string };
 
 function App() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [currentPage, setCurrentPage] = useState<PageState>('home');
-  const [user, setUser] = useState<any>(null); // Firebase auth əlavə edəndə buranı yeniləyəcəksən
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const openLogin = () => {
     setAuthMode('login');
@@ -25,23 +27,31 @@ function App() {
 
   const handleCreateAd = () => {
     if (!user) {
-      openLogin(); // giriş etməyibsə login modalı aç
+      openLogin();
     } else {
       setCurrentPage('create-ad');
     }
   };
 
+  const handleAuthSuccess = (loggedInUser: any, adminStatus: boolean) => {
+    setUser(loggedInUser);
+    setIsAdmin(adminStatus);
+    if (adminStatus) {
+      setCurrentPage('admin');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header 
-        onMenuOpen={() => setMobileNavOpen(true)} 
+      <Header
+        onMenuOpen={() => setMobileNavOpen(true)}
         onLoginClick={openLogin}
         onCreateAdClick={handleCreateAd}
         onLogoClick={() => setCurrentPage('home')}
       />
-      
-      <MobileNav 
-        isOpen={mobileNavOpen} 
+
+      <MobileNav
+        isOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
         onLoginClick={openLogin}
         onCreateAdClick={handleCreateAd}
@@ -60,21 +70,26 @@ function App() {
           <CreateAd onCancel={() => setCurrentPage('home')} />
         )}
 
+        {currentPage === 'admin' && (
+          <AdminPanel onBack={() => setCurrentPage('home')} />
+        )}
+
         {typeof currentPage === 'object' && currentPage.type === 'details' && (
-          <AdDetails 
-            adId={currentPage.id} 
-            onBack={() => setCurrentPage('home')} 
+          <AdDetails
+            adId={currentPage.id}
+            onBack={() => setCurrentPage('home')}
           />
         )}
       </main>
 
-      <Footer />
+      {currentPage === 'home' && <Footer />}
 
-      <AuthModal 
-        isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
         mode={authMode}
         setMode={setAuthMode}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );
